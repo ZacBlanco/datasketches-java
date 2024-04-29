@@ -89,6 +89,7 @@ under the License.
 
     <!-- Test -->
     <testng.version>7.5.1</testng.version>
+    <jmh.version>1.37</jmh.version>
     <!-- these are TestNG groups used for excluding / including groups of tests. See profiles section. -->
     <testng.generate-java-files>generate_java_files</testng.generate-java-files>
     <testng.check-cpp-files>check_cpp_files</testng.check-cpp-files>
@@ -147,6 +148,16 @@ under the License.
       <artifactId>testng</artifactId>
       <version>${testng.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openjdk.jmh</groupId>
+      <artifactId>jmh-core</artifactId>
+      <version>${jmh.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.openjdk.jmh</groupId>
+        <artifactId>jmh-generator-annprocess</artifactId>
+        <version>${jmh.version}</version>
     </dependency>
     <!--
     <dependency>
@@ -700,7 +711,7 @@ under the License.
         </pluginManagement>
       </build>
     </profile>
-    
+
     <profile>
       <id>check-cpp-historical-files</id>
       <build>
@@ -717,6 +728,64 @@ under the License.
             </plugin>
           </plugins>
         </pluginManagement>
+      </build>
+    </profile>
+
+    <profile>
+      <id>benchmarks</id>
+      <properties>
+        <uberjar.name>benchmarks</uberjar.name>
+      </properties>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-shade-plugin</artifactId>
+              <version>3.2.1</version>
+              <executions>
+                <execution>
+                  <phase>package</phase>
+                  <goals>
+                    <goal>shade</goal>
+                  </goals>
+                  <configuration>
+                    <finalName>${uberjar.name}</finalName>
+                    <shadeTestJar>true</shadeTestJar>
+
+                    <transformers>
+                      <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        <mainClass>org.apache.datasketches.kll.KllSketchBenchmarksByteSize</mainClass>
+                      </transformer>
+                      <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                    </transformers>
+                    <filters>
+                      <filter>
+                        <!--
+                            Shading signed JARs will fail without this.
+                            http://stackoverflow.com/questions/999489/invalid-signature-file-when-attempting-to-run-a-jar
+                        -->
+                        <artifact>*:*</artifact>
+                        <excludes>
+                          <exclude>META-INF/*.SF</exclude>
+                          <exclude>META-INF/*.DSA</exclude>
+                          <exclude>META-INF/*.RSA</exclude>
+                        </excludes>
+                      </filter>
+                    </filters>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+        <plugins>
+          <plugin>
+            <artifactId>maven-shade-plugin</artifactId>
+            <groupId>org.apache.maven.plugins</groupId>
+            <version>3.2.1</version>
+          </plugin>
+        </plugins>
       </build>
     </profile>
   </profiles>
